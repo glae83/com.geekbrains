@@ -256,7 +256,6 @@ public class Controller implements Initializable {
         try {
             File history = new File("history_" + nick + ".txt");
             if (!history.exists()) {
-//                history.createNewFile();
             }
             PrintWriter fileWriter = new PrintWriter(new FileWriter(history, false));
 
