@@ -19,11 +19,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -77,16 +77,13 @@ public class Controller implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         Platform.runLater(() -> {
             stage = (Stage) textField.getScene().getWindow();
-            stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-                @Override
-                public void handle(WindowEvent event) {
-                    System.out.println("bye");
-                    if (socket != null && !socket.isClosed()) {
-                        try {
-                            out.writeUTF("/end");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+            stage.setOnCloseRequest(event -> {
+                System.out.println("bye");
+                if (socket != null && !socket.isClosed()) {
+                    try {
+                        out.writeUTF("/end");
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             });
@@ -113,6 +110,7 @@ public class Controller implements Initializable {
                         if (str.startsWith("/authok ")) {
                             nick = str.split("\\s")[1];
                             setAuthenticated(true);
+                            historyLoad();
                             break;
                         }
 
@@ -129,7 +127,7 @@ public class Controller implements Initializable {
                             }
                         }
 
-                        textArea.appendText(str + "\n");
+                       textArea.appendText(str + "\n");
                     }
 
 
@@ -154,6 +152,7 @@ public class Controller implements Initializable {
 
                         } else {
                             textArea.appendText(str + "\n");
+                            historyFile();
                         }
                     }
                 }catch (RuntimeException e)   {
@@ -251,6 +250,44 @@ public class Controller implements Initializable {
             out.writeUTF(String.format("/reg %s %s %s", login, password, nickname));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+    private void historyFile() {
+        try {
+            File history = new File("history_" + nick + ".txt");
+            if (!history.exists()) {
+//                history.createNewFile();
+            }
+            PrintWriter fileWriter = new PrintWriter(new FileWriter(history, false));
+
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            bufferedWriter.write(textArea.getText());
+            bufferedWriter.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    private void historyLoad() throws IOException {
+        int count = 100;
+        File history = new File("history_" + nick + ".txt");
+        List<String> historyArr = new ArrayList<>();
+        FileInputStream in = new FileInputStream(history);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+        String x;
+        while ((x = bufferedReader.readLine()) != null) {
+            historyArr.add(x);
+        }
+        if (historyArr.size() > count) {
+            for (int i = historyArr.size() - count; i <= (historyArr.size() - 1); i++) {
+                textArea.appendText(historyArr.get(i) + "\n");
+                }
+        }
+        else
+            {
+            for (int i = 0; i < count; i++) {
+                System.out.println(historyArr.get(i));
+            }
         }
     }
 }
